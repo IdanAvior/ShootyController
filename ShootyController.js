@@ -10,8 +10,8 @@ function ShootyController(elem, color1, color2){
 	let mouseY = 0;
 	let mouseDown = false;
 	let shots = [];
-	let shotAdvanceInterval = null;
-	let drawShooterInterval = null;
+	let shootingInterval = null;
+	
 	let drawShooter = function(){
 		if (shooterDrawn){
 			ctx.beginPath();
@@ -20,36 +20,36 @@ function ShootyController(elem, color1, color2){
 			ctx.fill();
 		}
 	}
-	let init = function() {
+	
+	this.init = function() {
 		setInterval(function(){
-		clearCanvas();
-		drawShooter();
-		advanceShots();
-	}, 10);
+			clearCanvas();
+			drawShooter();
+			advanceShots();
+		}, 10);
 	}
-	init();
+	
+	
 	
 	let updateMousePosition = function(){
 		mouseX = event.clientX;
 		mouseY = event.clientY;
 	}
-
 	
 	this.handleCanvasMouseDown = function() {
 		mouseDown = true;
 		let cnvBox = canvas.getBoundingClientRect();
 		let x = event.clientX - cnvBox.left;
 		let y = event.clientY - cnvBox.top;
-		this.shootingInterval = setInterval(shoot, 10, x, y);
+		shootingInterval = setInterval(shoot, 10, x, y);
 	}
 	
 	this.handleCanvasMouseUp = function() {
 		mouseDown = false;
-		clearInterval(this.shootingInterval);
+		clearInterval(shootingInterval);
 	}		
 	
-	this.handleCanvasClick = function(){
-		
+	this.handleCanvasClick = function(){		
 		const delta = radius;
 		let cnvBox = canvas.getBoundingClientRect();
 		let x = event.clientX - cnvBox.left;
@@ -68,9 +68,9 @@ function ShootyController(elem, color1, color2){
 		}
 	}
 	
-	shoot = function() {
+	let shoot = function() {
 		if (mouseDown && shooterDrawn){
-			let ball = new Ball(ctx, {x:shooterX, y:shooterY},{cursorX:mouseX, cursorY:mouseY});
+			let ball = new Ball(ctx, {x:shooterX, y:shooterY},{cursorX:mouseX, cursorY:mouseY}, color2);
 			shots.push(ball);
 		}
 	}
@@ -84,16 +84,16 @@ function ShootyController(elem, color1, color2){
 		for (let i = 0; i < length; i++){
 			let ball = shots[i];
 			if (ball != undefined){
-				ball.advance(true);
+				ball.advance();
 				if (ball.xPosition >= canvas.width || ball.xPosition <=0
 				|| ball.yPosition >= canvas.height || ball.yPosition <= 0){
-					shots[i].erase();
 					shots.splice(i, 1);
 				}
 			}
 		}
 	}
 	
+	this.init();
 	canvas.setAttribute('width', '500');
 	canvas.setAttribute('height', '500');
 	canvas.addEventListener("mousemove", updateMousePosition);
@@ -102,37 +102,28 @@ function ShootyController(elem, color1, color2){
 	canvas.addEventListener("mouseup", this.handleCanvasMouseUp);
 	canvas.addEventListener("click", this.handleCanvasClick);
 	elem.appendChild(canvas);
-	
-	function Ball(ctx, start, cursorLoc){
-		this.xPosition = start.x;
-		this.yPosition = start.y;
-		let delta_x = cursorLoc.cursorX - start.x;
-		let delta_y = cursorLoc.cursorY - start.y;
-		let v = 200;	//ball velocity
-		this.angle = Math.atan2(delta_y, delta_x);
-		this.vx = v * Math.cos(this.angle);
-		this.vy = v * Math.sin(this.angle);
-		let stepSize = 0.02;
-		let ballRadius = 2;
-		this.erase = function(){
-			ctx.beginPath();
-			// Deletion circle is enlarged slightly to guarantee full erasure
-			ctx.arc(this.xPosition,this.yPosition,ballRadius + 0.8, 0, 2*Math.PI);
-			ctx.fillStyle = canvas.style.backgroundColor;
-			ctx.fill();
-		}
-		this.draw = function(){
-			ctx.beginPath();
-			ctx.arc(this.xPosition,this.yPosition,ballRadius,0,2*Math.PI);
-			ctx.fillStyle = color2;
-			ctx.fill();
-		}
-		this.advance = function(drawBall){
-			this.xPosition += this.vx * stepSize;
-			this.yPosition += this.vy * stepSize;
-			if (drawBall)
-				this.draw();
-		}
+}
 
+function Ball(ctx, start, cursorLoc, color){
+	this.xPosition = start.x;
+	this.yPosition = start.y;
+	let delta_x = cursorLoc.cursorX - start.x;
+	let delta_y = cursorLoc.cursorY - start.y;
+	let v = 200;	//ball velocity
+	this.angle = Math.atan2(delta_y, delta_x);
+	this.vx = v * Math.cos(this.angle);
+	this.vy = v * Math.sin(this.angle);
+	let stepSize = 0.02;
+	let ballRadius = 2;
+	this.draw = function(){
+		ctx.beginPath();
+		ctx.arc(this.xPosition,this.yPosition,ballRadius,0,2*Math.PI);
+		ctx.fillStyle = color;
+		ctx.fill();
+	}
+	this.advance = function(){
+		this.xPosition += this.vx * stepSize;
+		this.yPosition += this.vy * stepSize;
+		this.draw();
 	}
 }
